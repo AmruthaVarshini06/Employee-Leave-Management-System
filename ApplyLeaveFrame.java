@@ -1,7 +1,12 @@
 package screens;
 
 import javax.swing.*;
+import javax.swing.SpinnerDateModel;
 import java.awt.*;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+import data.*;
 
 public class ApplyLeaveFrame extends JFrame {
 
@@ -15,7 +20,7 @@ public class ApplyLeaveFrame extends JFrame {
         // ===== Title =====
         JLabel title = new JLabel("Apply Leave Form");
         title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setBounds(180, 20, 300, 30);
+        title.setBounds(160, 20, 320, 30);
         add(title);
 
         // ===== Employee Name =====
@@ -43,18 +48,22 @@ public class ApplyLeaveFrame extends JFrame {
         fromLbl.setBounds(80, 180, 120, 25);
         add(fromLbl);
 
-        JTextField fromField = new JTextField("YYYY-MM-DD");
-        fromField.setBounds(200, 180, 250, 30);
-        add(fromField);
+        SpinnerDateModel fromModel = new SpinnerDateModel(new Date(), null, null, java.util.Calendar.DAY_OF_MONTH);
+        JSpinner fromSpinner = new JSpinner(fromModel);
+        fromSpinner.setBounds(200, 180, 250, 30);
+        fromSpinner.setEditor(new JSpinner.DateEditor(fromSpinner, "yyyy-MM-dd"));
+        add(fromSpinner);
 
         // ===== To Date =====
         JLabel toLbl = new JLabel("To Date:");
         toLbl.setBounds(80, 230, 120, 25);
         add(toLbl);
 
-        JTextField toField = new JTextField("YYYY-MM-DD");
-        toField.setBounds(200, 230, 250, 30);
-        add(toField);
+        SpinnerDateModel toModel = new SpinnerDateModel(new Date(), null, null, java.util.Calendar.DAY_OF_MONTH);
+        JSpinner toSpinner = new JSpinner(toModel);
+        toSpinner.setBounds(200, 230, 250, 30);
+        toSpinner.setEditor(new JSpinner.DateEditor(toSpinner, "yyyy-MM-dd"));
+        add(toSpinner);
 
         // ===== Reason =====
         JLabel reasonLbl = new JLabel("Reason:");
@@ -75,34 +84,50 @@ public class ApplyLeaveFrame extends JFrame {
         cancelBtn.setBounds(320, 370, 120, 35);
         add(cancelBtn);
 
-        // ===== Button Actions =====
-
+        // ===== Submit Action =====
         submitBtn.addActionListener(e -> {
 
-            String from = fromField.getText().trim();
-            String to = toField.getText().trim();
+            Date fromDate = (Date) fromSpinner.getValue();
+            Date toDate = (Date) toSpinner.getValue();
             String reason = reasonArea.getText().trim();
+            String type = (String) typeBox.getSelectedItem();
 
-            if(from.isEmpty() || to.isEmpty() || reason.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "All fields are required!",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
+            if (type == null) {
+                JOptionPane.showMessageDialog(this, "Select leave type");
                 return;
             }
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Leave Applied Successfully ✅",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE
+            if (reason.length() < 3) {
+                JOptionPane.showMessageDialog(this, "Reason too short");
+                return;
+            }
+
+            if (toDate.before(fromDate)) {
+                JOptionPane.showMessageDialog(this,
+                        "To Date cannot be before From Date");
+                return;
+            }
+
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+
+            Leave leave = new Leave(
+                    username,
+                    type,
+                    df.format(fromDate),
+                    df.format(toDate),
+                    reason
             );
 
+            DataStore.leaves.add(leave);   // ✅ save shared list
+
+            JOptionPane.showMessageDialog(this,
+                    "Leave Applied Successfully ✅");
+
+            submitBtn.setEnabled(false); // prevent double submit
             dispose();
         });
 
+        // ===== Cancel =====
         cancelBtn.addActionListener(e -> dispose());
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
