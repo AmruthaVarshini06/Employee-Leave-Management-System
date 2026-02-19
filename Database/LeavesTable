@@ -1,0 +1,10 @@
+CREATE TABLE leaves ( 
+    leave_id VARCHAR(20) PRIMARY KEY, 
+    username VARCHAR(50), 
+    leave_type VARCHAR(20) NOT NULL, 
+    from_date DATE NOT NULL, 
+    to_date DATE NOT NULL, 
+    reason TEXT, 
+    status VARCHAR(20) DEFAULT 'Pending', 
+    FOREIGN KEY (username) REFERENCES users(username) 
+);
