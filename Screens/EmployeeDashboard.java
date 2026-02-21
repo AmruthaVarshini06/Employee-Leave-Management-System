@@ -116,7 +116,7 @@ public class EmployeeDashboard extends JFrame {
         lbl.setForeground(color);
         return lbl;
     }
-
+    
     private void styleButton(JButton btn, Color bgColor) {
         btn.setBackground(bgColor);
         btn.setForeground(Color.WHITE);
