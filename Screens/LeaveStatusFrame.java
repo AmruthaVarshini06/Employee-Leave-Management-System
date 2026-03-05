@@ -1,6 +1,7 @@
 package screens;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -16,33 +17,32 @@ public class LeaveStatusFrame extends JFrame {
         this.con = con;
 
         setTitle("Leave Status");
-        setSize(750, 450);
+        setSize(800, 500);
         setLocationRelativeTo(null);
-        getContentPane().setBackground(new Color(240, 240, 240));
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/common/appicon.jpg.jpeg"));
-            setIconImage(icon.getImage());
-        } catch (Exception e) {
-            System.out.println("App icon not found");
-        }
+        getContentPane().setBackground(new Color(245, 245, 245));
 
-        // ================= HEADER =================
-        JLabel header = new JLabel("Current Leave Status for: " + username, SwingConstants.CENTER);
-        header.setFont(new Font("Arial", Font.BOLD, 22));
-        header.setForeground(new Color(40, 70, 160));
-        header.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        // ========== HEADER ==========
+        JLabel header = new JLabel("Leave Status for: " + username, SwingConstants.CENTER);
+        header.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        header.setForeground(new Color(40, 90, 160));
+        header.setBorder(new EmptyBorder(15, 0, 15, 0));
         add(header, BorderLayout.NORTH);
 
-        // ================= PANEL =================
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
-        mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        add(mainPanel, BorderLayout.CENTER);
+        // ========== TABLE PANEL ==========
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        tablePanel.setBackground(Color.WHITE);
+        add(tablePanel, BorderLayout.CENTER);
 
-        // ================= TABLE =================
         DefaultTableModel model = new DefaultTableModel();
-        JTable table = new JTable(model);
+        JTable table = new JTable(model) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // make table non-editable
+            }
+        };
 
         model.addColumn("Leave ID");
         model.addColumn("Type");
@@ -52,19 +52,23 @@ public class LeaveStatusFrame extends JFrame {
         model.addColumn("Status");
 
         table.setRowHeight(30);
-        table.setFont(new Font("Arial", Font.PLAIN, 14));
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setBackground(new Color(40, 90, 160));
         table.getTableHeader().setForeground(Color.WHITE);
+        table.setGridColor(new Color(220, 220, 220));
+        table.setFillsViewportHeight(true);
+        table.setShowVerticalLines(false);
+        table.setShowHorizontalLines(true);
 
-        // Center align cells
+        // Center align all columns
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // ================= FETCH DATA =================
+        // ========== FETCH DATA ==========
         try {
             String sql = "SELECT leave_id, leave_type, from_date, to_date, reason, status FROM leaves WHERE username=?";
             PreparedStatement pst = con.prepareStatement(sql);
@@ -81,23 +85,28 @@ public class LeaveStatusFrame extends JFrame {
                         rs.getString("status")
                 });
             }
-
             rs.close();
             pst.close();
-
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage());
         }
 
-        // ================= STATUS COLOR =================
+        // ========== STATUS COLOR + ALTERNATING ROWS ==========
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object value, boolean isSelected,
                                                            boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(t, value, isSelected, hasFocus, row, column);
 
-                if (column == 5) { // Status column
+                // Alternating row colors
+                if (!isSelected) {
+                    if (row % 2 == 0) c.setBackground(new Color(245, 245, 245));
+                    else c.setBackground(Color.WHITE);
+                }
+
+                // Status column coloring
+                if (column == 5) {
                     String status = value.toString();
                     if (status.equalsIgnoreCase("Pending")) c.setForeground(new Color(255, 140, 0));
                     else if (status.equalsIgnoreCase("Approved")) c.setForeground(new Color(0, 128, 0));
@@ -107,40 +116,45 @@ public class LeaveStatusFrame extends JFrame {
                     c.setForeground(Color.BLACK);
                 }
 
-                if (isSelected) {
-                    c.setBackground(new Color(200, 220, 255));
-                } else {
-                    c.setBackground(Color.WHITE);
-                }
-
                 setHorizontalAlignment(SwingConstants.CENTER);
                 return c;
             }
         });
 
         JScrollPane scroll = new JScrollPane(table);
-        mainPanel.add(scroll, BorderLayout.CENTER);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1));
+        tablePanel.add(scroll, BorderLayout.CENTER);
 
-        // ================= CLOSE BUTTON =================
+        // ========== CLOSE BUTTON ==========
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(Color.WHITE);
         JButton closeBtn = new JButton("Close");
-        closeBtn.setPreferredSize(new Dimension(120, 35));
+        closeBtn.setPreferredSize(new Dimension(140, 40));
         styleButton(closeBtn);
         bottomPanel.add(closeBtn);
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        tablePanel.add(bottomPanel, BorderLayout.SOUTH);
 
         closeBtn.addActionListener(e -> dispose());
 
         setVisible(true);
     }
 
-    // ================= BUTTON STYLE =================
+    // ========== BUTTON STYLE ==========
     private void styleButton(JButton btn) {
         btn.setBackground(new Color(40, 90, 160));
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setFont(new Font("Arial", Font.BOLD, 14));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Hover effect
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(30, 70, 140));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(40, 90, 160));
+            }
+        });
     }
 }

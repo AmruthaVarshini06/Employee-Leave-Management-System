@@ -11,48 +11,59 @@ public class ManageEmployeesFrame extends JFrame {
     private DefaultTableModel model;
     private JTable table;
 
-    private JTextField idField, nameField, depField, emailField, mobileField, salaryField;
+    private JTextField idField, nameField, depField, emailField, mobileField, salaryField, dateField;
 
     public ManageEmployeesFrame(Connection con) {
         this.con = con;
 
         setTitle("Manage Employees");
-        setSize(950, 580);
+        setSize(1150, 720);
         setLocationRelativeTo(null);
-        setLayout(null);
-        
+        setResizable(true);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/common/appicon.jpg.jpeg"));
             setIconImage(icon.getImage());
         } catch (Exception e) {
             System.out.println("App icon not found");
         }
-        
-        JLabel title = new JLabel("Manage Employees");
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setBounds(360, 20, 250, 30);
-        add(title);
 
-        // ===== Search =====
-        JLabel searchLbl = new JLabel("Search:");
-        searchLbl.setBounds(50, 55, 60, 25);
-        add(searchLbl);
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBackground(new Color(240, 245, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        add(mainPanel);
 
-        JTextField searchField = new JTextField();
-        searchField.setBounds(110, 55, 200, 30);
-        add(searchField);
+        // ===== Title =====
+        JLabel title = new JLabel("Employee Management Dashboard", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setForeground(new Color(30, 60, 120));
+        mainPanel.add(title, BorderLayout.NORTH);
 
-        JButton searchBtn = new JButton("Search");
-        searchBtn.setBounds(320, 55, 100, 30);
-        add(searchBtn);
+        // ===== Center Container =====
+        JPanel centerContainer = new JPanel(new BorderLayout(15, 15));
+        centerContainer.setOpaque(false);
+        mainPanel.add(centerContainer, BorderLayout.CENTER);
 
-        JButton resetBtn = new JButton("Show All");
-        resetBtn.setBounds(430, 55, 120, 30);
-        add(resetBtn);
+        // ===== Search Panel =====
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBorder(BorderFactory.createLineBorder(new Color(220,220,220)));
+
+        JTextField searchField = new JTextField(20);
+        JButton searchBtn = createButton("Search", new Color(52,152,219));
+        JButton resetBtn = createButton("Show All", new Color(120,120,120));
+
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchBtn);
+        searchPanel.add(resetBtn);
+
+        centerContainer.add(searchPanel, BorderLayout.NORTH);
 
         // ===== Table =====
         model = new DefaultTableModel(
-                new String[]{"Emp ID", "Name", "Dept", "Email", "Mobile", "Salary"}, 0
+                new String[]{"Emp ID", "Name", "Dept", "Email", "Mobile", "Salary", "Date Of Joining"}, 0
         ) {
             public boolean isCellEditable(int r, int c) {
                 return false;
@@ -60,11 +71,48 @@ public class ManageEmployeesFrame extends JFrame {
         };
 
         table = new JTable(model);
-        JScrollPane sp = new JScrollPane(table);
-        sp.setBounds(50, 95, 820, 220);
-        add(sp);
+        table.setRowHeight(30);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(30,60,120));
+        table.getTableHeader().setForeground(Color.WHITE);
 
-        // ===== Row select =====
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createLineBorder(new Color(220,220,220)));
+        centerContainer.add(sp, BorderLayout.CENTER);
+
+        // ===== Form Panel =====
+        JPanel formPanel = new JPanel(new GridLayout(3, 3, 20, 15));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createTitledBorder("Employee Details"));
+
+        idField = createField(formPanel, "Emp ID:");
+        nameField = createField(formPanel, "Name:");
+        depField = createField(formPanel, "Department:");
+        emailField = createField(formPanel, "Email:");
+        mobileField = createField(formPanel, "Mobile:");
+        salaryField = createField(formPanel, "Salary:");
+        dateField = createField(formPanel, "Date Of Joining (YYYY-MM-DD):");
+
+        centerContainer.add(formPanel, BorderLayout.SOUTH);
+
+        // ===== Button Panel =====
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(240,245,250));
+
+        JButton addBtn = createButton("Add", new Color(46,204,113));
+        JButton updateBtn = createButton("Update", new Color(241,196,15));
+        JButton deleteBtn = createButton("Delete", new Color(231,76,60));
+        JButton closeBtn = createButton("Close", new Color(120,120,120));
+
+        buttonPanel.add(addBtn);
+        buttonPanel.add(updateBtn);
+        buttonPanel.add(deleteBtn);
+        buttonPanel.add(closeBtn);
+
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // ===== Row Selection =====
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
             int r = table.getSelectedRow();
@@ -76,37 +124,11 @@ public class ManageEmployeesFrame extends JFrame {
             emailField.setText(table.getValueAt(r, 3).toString());
             mobileField.setText(table.getValueAt(r, 4).toString());
             salaryField.setText(table.getValueAt(r, 5).toString());
+            dateField.setText(table.getValueAt(r, 6).toString());
         });
 
-        // ===== Fields =====
-        idField = field("Emp ID:", 60, 340);
-        nameField = field("Name:", 260, 340);
-        depField = field("Dept:", 500, 340);
-        emailField = field("Email:", 60, 380);
-        mobileField = field("Mobile:", 350, 380);
-        salaryField = field("Salary:", 590, 380);
-
-        // ===== Buttons =====
-        JButton addBtn = new JButton("Add");
-        addBtn.setBounds(180, 450, 120, 35);
-        add(addBtn);
-
-        JButton updateBtn = new JButton("Update");
-        updateBtn.setBounds(320, 450, 120, 35);
-        add(updateBtn);
-
-        JButton deleteBtn = new JButton("Delete");
-        deleteBtn.setBounds(460, 450, 120, 35);
-        add(deleteBtn);
-
-        JButton closeBtn = new JButton("Close");
-        closeBtn.setBounds(600, 450, 120, 35);
-        add(closeBtn);
-
-        // ===== Load Data =====
         loadEmployeesFromDB();
 
-        // ===== Actions =====
         addBtn.addActionListener(e -> addEmployee());
         updateBtn.addActionListener(e -> updateEmployee());
         deleteBtn.addActionListener(e -> deleteEmployee());
@@ -121,18 +143,34 @@ public class ManageEmployeesFrame extends JFrame {
         setVisible(true);
     }
 
-    private JTextField field(String label, int x, int y) {
-        JLabel l = new JLabel(label);
-        l.setBounds(x, y, 80, 25);
-        add(l);
+    private JTextField createField(JPanel panel, String label) {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setOpaque(false);
 
+        JLabel l = new JLabel(label);
         JTextField f = new JTextField();
-        f.setBounds(x + 60, y, 140, 30);
-        add(f);
+
+        container.add(l, BorderLayout.NORTH);
+        container.add(f, BorderLayout.CENTER);
+
+        panel.add(container);
         return f;
     }
 
-    // ===== LOAD =====
+    private JButton createButton(String text, Color bg) {
+        JButton btn = new JButton(text);
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setPreferredSize(new Dimension(120, 40));
+        return btn;
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone.matches("\\d{10}");
+    }
+
     private void loadEmployeesFromDB() {
         model.setRowCount(0);
         try {
@@ -147,31 +185,36 @@ public class ManageEmployeesFrame extends JFrame {
                         rs.getString("department"),
                         rs.getString("email"),
                         rs.getString("mobile"),
-                        rs.getDouble("salary")
+                        rs.getDouble("salary"),
+                        rs.getString("date_of_joining")
                 });
             }
 
             rs.close();
             pst.close();
         } catch (Exception e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error loading employees from DB");
         }
     }
 
-    // ===== ADD =====
     private void addEmployee() {
-
         try {
-            String sql = "INSERT INTO employees VALUES (?, ?, ?, ?, ?, ?)";
+            String mobile = mobileField.getText().trim();
+            if (!isValidPhone(mobile)) {
+                JOptionPane.showMessageDialog(this, "Invalid Phone Number! Enter 10 digits only.");
+                return;
+            }
+
+            String sql = "INSERT INTO employees VALUES (?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pst = con.prepareStatement(sql);
 
             pst.setString(1, idField.getText().trim());
             pst.setString(2, nameField.getText().trim());
             pst.setString(3, depField.getText().trim());
             pst.setString(4, emailField.getText().trim());
-            pst.setString(5, mobileField.getText().trim());
+            pst.setString(5, mobile);
             pst.setDouble(6, Double.parseDouble(salaryField.getText().trim()));
+            pst.setString(7, dateField.getText().trim());
 
             pst.executeUpdate();
             pst.close();
@@ -181,24 +224,28 @@ public class ManageEmployeesFrame extends JFrame {
             loadEmployeesFromDB();
 
         } catch (Exception e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
-    // ===== UPDATE =====
     private void updateEmployee() {
-
         try {
-            String sql = "UPDATE employees SET name=?, department=?, email=?, mobile=?, salary=? WHERE emp_id=?";
+            String mobile = mobileField.getText().trim();
+            if (!isValidPhone(mobile)) {
+                JOptionPane.showMessageDialog(this, "Invalid Phone Number! Enter 10 digits only.");
+                return;
+            }
+
+            String sql = "UPDATE employees SET name=?, department=?, email=?, mobile=?, salary=?, date_of_joining=? WHERE emp_id=?";
             PreparedStatement pst = con.prepareStatement(sql);
 
             pst.setString(1, nameField.getText().trim());
             pst.setString(2, depField.getText().trim());
             pst.setString(3, emailField.getText().trim());
-            pst.setString(4, mobileField.getText().trim());
+            pst.setString(4, mobile);
             pst.setDouble(5, Double.parseDouble(salaryField.getText().trim()));
-            pst.setString(6, idField.getText().trim());
+            pst.setString(6, dateField.getText().trim());
+            pst.setString(7, idField.getText().trim());
 
             pst.executeUpdate();
             pst.close();
@@ -208,14 +255,11 @@ public class ManageEmployeesFrame extends JFrame {
             loadEmployeesFromDB();
 
         } catch (Exception e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error updating employee");
         }
     }
 
-    // ===== DELETE =====
     private void deleteEmployee() {
-
         try {
             String sql = "DELETE FROM employees WHERE emp_id=?";
             PreparedStatement pst = con.prepareStatement(sql);
@@ -229,14 +273,11 @@ public class ManageEmployeesFrame extends JFrame {
             loadEmployeesFromDB();
 
         } catch (Exception e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error deleting employee");
         }
     }
 
-    // ===== SEARCH =====
     private void searchEmployees(String key) {
-
         model.setRowCount(0);
 
         try {
@@ -258,7 +299,8 @@ public class ManageEmployeesFrame extends JFrame {
                         rs.getString("department"),
                         rs.getString("email"),
                         rs.getString("mobile"),
-                        rs.getDouble("salary")
+                        rs.getDouble("salary"),
+                        rs.getString("date_of_joining")
                 });
                 found = true;
             }
@@ -269,7 +311,6 @@ public class ManageEmployeesFrame extends JFrame {
             pst.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error searching employees");
         }
     }
@@ -281,5 +322,6 @@ public class ManageEmployeesFrame extends JFrame {
         emailField.setText("");
         mobileField.setText("");
         salaryField.setText("");
+        dateField.setText("");
     }
 }

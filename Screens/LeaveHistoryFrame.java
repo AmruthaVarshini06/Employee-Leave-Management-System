@@ -1,6 +1,7 @@
 package screens;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.sql.*;
 
@@ -10,130 +11,184 @@ public class LeaveHistoryFrame extends JFrame {
     private Connection con;
 
     public LeaveHistoryFrame(String username, Connection con) {
+
         this.username = username;
         this.con = con;
 
         setTitle("Leave Summary");
-        setSize(600, 450);
+        setSize(700, 500);
         setLocationRelativeTo(null);
-        setLayout(null);
-        getContentPane().setBackground(new Color(240, 240, 240)); // light gray background
-        
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/common/appicon.jpg.jpeg"));
-            setIconImage(icon.getImage());
-        } catch (Exception e) {
-            System.out.println("App icon not found");
-        }
+
+        // Allow resizing & fullscreen
+        setExtendedState(JFrame.NORMAL);
+
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        getContentPane().setBackground(new Color(240,245,250));
 
         // ================= HEADER =================
-        JLabel header = new JLabel("Leave Summary for: " + username);
-        header.setBounds(50, 20, 500, 40);
-        header.setFont(new Font("Arial", Font.BOLD, 22));
-        header.setForeground(new Color(40, 70, 160));
-        add(header);
+        JPanel header = new JPanel();
+        header.setBackground(new Color(40,90,160));
+        header.setBorder(new EmptyBorder(20,20,20,20));
+        header.setLayout(new BorderLayout());
 
-        // ================= PANEL =================
-        JPanel panel = new JPanel();
-        panel.setBounds(50, 80, 500, 300);
-        panel.setLayout(null);
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        add(panel);
+        JLabel title = new JLabel("Leave Summary - " + username);
+        title.setForeground(Color.WHITE);
+        title.setFont(new Font("Segoe UI",Font.BOLD,24));
 
-        // ================= LABELS =================
-        JLabel totalLbl = createLabel(20, 20);
-        JLabel pendingLbl = createLabel(20, 70);
-        JLabel approvedLbl = createLabel(20, 120);
-        JLabel rejectedLbl = createLabel(20, 170);
-        JLabel remainingLbl = createLabel(20, 220);
+        header.add(title,BorderLayout.WEST);
 
-        panel.add(totalLbl);
-        panel.add(pendingLbl);
-        panel.add(approvedLbl);
-        panel.add(rejectedLbl);
-        panel.add(remainingLbl);
+        add(header,BorderLayout.NORTH);
 
-        // ================= FETCH DATA =================
-        try {
+        // ================= MAIN PANEL =================
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.setBackground(new Color(240,245,250));
+        add(mainPanel,BorderLayout.CENTER);
+
+        JPanel card = new JPanel();
+        card.setLayout(new GridBagLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200,200,200)),
+                new EmptyBorder(30,40,30,40)
+        ));
+
+        mainPanel.add(card);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(15,10,15,10);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        Font labelFont = new Font("Segoe UI",Font.BOLD,16);
+
+        JLabel totalLbl = new JLabel();
+        JLabel pendingLbl = new JLabel();
+        JLabel approvedLbl = new JLabel();
+        JLabel rejectedLbl = new JLabel();
+        JLabel remainingLbl = new JLabel();
+
+        totalLbl.setFont(labelFont);
+        pendingLbl.setFont(labelFont);
+        approvedLbl.setFont(labelFont);
+        rejectedLbl.setFont(labelFont);
+        remainingLbl.setFont(labelFont);
+
+        gbc.gridx=0; gbc.gridy=0;
+        card.add(totalLbl,gbc);
+
+        gbc.gridy++;
+        card.add(pendingLbl,gbc);
+
+        gbc.gridy++;
+        card.add(approvedLbl,gbc);
+
+        gbc.gridy++;
+        card.add(rejectedLbl,gbc);
+
+        gbc.gridy++;
+        card.add(remainingLbl,gbc);
+
+        // ================= DATABASE =================
+        int MAX_CASUAL = 10;
+        int MAX_SICK = 8;
+        int MAX_EARNED = 15;
+
+        int usedCasual = 0;
+        int usedSick = 0;
+        int usedEarned = 0;
+
+        try{
+
             Statement stmt = con.createStatement();
 
-            // Total leaves applied
-            ResultSet rsTotal = stmt.executeQuery("SELECT COUNT(*) AS total FROM leaves WHERE username='" + username + "'");
+            ResultSet rsTotal = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM leaves WHERE username='"+username+"'");
             rsTotal.next();
-            int totalLeaves = rsTotal.getInt("total");
-            totalLbl.setText("Total Leaves Applied: " + totalLeaves);
-            rsTotal.close();
+            int totalLeaves = rsTotal.getInt(1);
+            totalLbl.setText("Total Leaves Applied : " + totalLeaves);
 
-            // Pending leaves
-            ResultSet rsPending = stmt.executeQuery("SELECT COUNT(*) AS pending FROM leaves WHERE username='" + username + "' AND status='Pending'");
+            ResultSet rsPending = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM leaves WHERE username='"+username+"' AND status='Pending'");
             rsPending.next();
-            int pendingLeaves = rsPending.getInt("pending");
-            pendingLbl.setText("Pending Leaves: " + pendingLeaves);
-            rsPending.close();
+            int pendingLeaves = rsPending.getInt(1);
+            pendingLbl.setText("Pending Leaves : " + pendingLeaves);
 
-            // Approved leaves
-            ResultSet rsApproved = stmt.executeQuery("SELECT COUNT(*) AS approved FROM leaves WHERE username='" + username + "' AND status='Approved'");
+            ResultSet rsApproved = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM leaves WHERE username='"+username+"' AND status='Approved'");
             rsApproved.next();
-            int approvedLeaves = rsApproved.getInt("approved");
-            approvedLbl.setText("Approved Leaves: " + approvedLeaves);
-            rsApproved.close();
+            int approvedLeaves = rsApproved.getInt(1);
+            approvedLbl.setText("Approved Leaves : " + approvedLeaves);
 
-            // Rejected leaves
-            ResultSet rsRejected = stmt.executeQuery("SELECT COUNT(*) AS rejected FROM leaves WHERE username='" + username + "' AND status='Rejected'");
+            ResultSet rsRejected = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM leaves WHERE username='"+username+"' AND status='Rejected'");
             rsRejected.next();
-            int rejectedLeaves = rsRejected.getInt("rejected");
-            rejectedLbl.setText("Rejected Leaves: " + rejectedLeaves);
-            rsRejected.close();
+            int rejectedLeaves = rsRejected.getInt(1);
+            rejectedLbl.setText("Rejected Leaves : " + rejectedLeaves);
 
-            // Remaining leaves
-            int remainingCasual = 5;
-            int remainingSick = 3;
-            int remainingEarned = 8;
+            ResultSet rsLeaves = stmt.executeQuery(
+                    "SELECT leave_type, COUNT(*) FROM leaves WHERE username='"+username+"' AND status='Approved' GROUP BY leave_type");
 
-            ResultSet rsLeaves = stmt.executeQuery("SELECT leave_type, COUNT(*) AS used FROM leaves WHERE username='" + username + "' AND status='Approved' GROUP BY leave_type");
-            while (rsLeaves.next()) {
-                String type = rsLeaves.getString("leave_type");
-                int used = rsLeaves.getInt("used");
-                if (type.equalsIgnoreCase("Casual")) remainingCasual -= used;
-                if (type.equalsIgnoreCase("Sick")) remainingSick -= used;
-                if (type.equalsIgnoreCase("Earned")) remainingEarned -= used;
+            while(rsLeaves.next()){
+
+                String type = rsLeaves.getString(1);
+                int used = rsLeaves.getInt(2);
+
+                if(type.equalsIgnoreCase("Casual"))
+                    usedCasual = used;
+
+                else if(type.equalsIgnoreCase("Sick"))
+                    usedSick = used;
+
+                else if(type.equalsIgnoreCase("Earned"))
+                    usedEarned = used;
             }
-            rsLeaves.close();
-            stmt.close();
 
-            remainingLbl.setText("Remaining Leaves - Casual: " + remainingCasual +
-                    ", Sick: " + remainingSick + ", Earned: " + remainingEarned);
+            remainingLbl.setText("Remaining Leaves → Casual: "
+                    +(MAX_CASUAL-usedCasual)
+                    +" | Sick: "+(MAX_SICK-usedSick)
+                    +" | Earned: "+(MAX_EARNED-usedEarned));
 
-        } catch (SQLException e) {
+        }
+        catch(Exception e){
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage());
         }
 
-        // ================= CLOSE BUTTON =================
+        // ================= BUTTON =================
         JButton closeBtn = new JButton("Close");
-        closeBtn.setBounds(220, 370, 120, 35);
+        closeBtn.setPreferredSize(new Dimension(130,40));
         styleButton(closeBtn);
-        add(closeBtn);
 
-        closeBtn.addActionListener(e -> dispose());
+        JPanel bottom = new JPanel();
+        bottom.setBackground(new Color(240,245,250));
+        bottom.add(closeBtn);
+
+        add(bottom,BorderLayout.SOUTH);
+
+        closeBtn.addActionListener(e->dispose());
 
         setVisible(true);
     }
 
-    // ================= HELPER METHODS =================
-    private JLabel createLabel(int x, int y) {
-        JLabel lbl = new JLabel();
-        lbl.setBounds(x, y, 450, 40);
-        lbl.setFont(new Font("Arial", Font.BOLD, 16));
-        lbl.setForeground(new Color(50, 50, 50));
-        return lbl;
-    }
+    // ================= BUTTON STYLE =================
+    private void styleButton(JButton btn){
 
-    private void styleButton(JButton btn) {
-        btn.setBackground(new Color(40, 90, 160));
+        btn.setBackground(new Color(40,90,160));
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setFont(new Font("Arial", Font.BOLD, 14));
+        btn.setFont(new Font("Segoe UI",Font.BOLD,14));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btn.addMouseListener(new java.awt.event.MouseAdapter(){
+
+            public void mouseEntered(java.awt.event.MouseEvent evt){
+                btn.setBackground(new Color(30,70,140));
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt){
+                btn.setBackground(new Color(40,90,160));
+            }
+        });
     }
 }

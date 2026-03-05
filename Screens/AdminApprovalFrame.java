@@ -9,16 +9,17 @@ public class AdminApprovalFrame extends JFrame {
 
     private JTable table;
     private DefaultTableModel model;
-    private Connection con; // JDBC connection
+    private Connection con;
 
     public AdminApprovalFrame(Connection con) {
         this.con = con;
 
         setTitle("Admin — Leave Approval Panel");
-        setSize(850, 520);
+        setSize(1100, 700);
         setLocationRelativeTo(null);
-        setLayout(null);
-        setResizable(false);
+        setResizable(true);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/common/appicon.jpg.jpeg"));
             setIconImage(icon.getImage());
@@ -26,75 +27,101 @@ public class AdminApprovalFrame extends JFrame {
             System.out.println("App icon not found");
         }
 
-        // ===== Title =====
-        JLabel title = new JLabel("Leave Requests", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 24));
-        title.setBounds(250, 20, 350, 30);
-        add(title);
+        // ===== Main Background Panel =====
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(240, 245, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        add(mainPanel);
 
-        // ===== Table =====
+        // ===== Title =====
+        JLabel title = new JLabel("Leave Approval Dashboard", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setForeground(new Color(30, 60, 120));
+        title.setBorder(BorderFactory.createEmptyBorder(10, 10, 20, 10));
+        mainPanel.add(title, BorderLayout.NORTH);
+
+        // ===== Table Panel (Card Style) =====
+        JPanel tableCard = new JPanel(new BorderLayout());
+        tableCard.setBackground(Color.WHITE);
+        tableCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
         String cols[] = {"Leave ID", "Employee", "Type", "From", "To", "Reason", "Status"};
         model = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int column) {
-                return false; // make table read-only
+                return false;
             }
         };
 
         table = new JTable(model);
-        table.setRowHeight(28);
-        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        table.setRowHeight(30);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(30, 60, 120));
+        table.getTableHeader().setForeground(Color.WHITE);
 
-        JScrollPane sp = new JScrollPane(table);
-        sp.setBounds(30, 70, 780, 300);
-        add(sp);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        tableCard.add(scrollPane, BorderLayout.CENTER);
 
-        // ===== Buttons =====
-        JButton approveBtn = new JButton("Approve");
-        approveBtn.setBounds(180, 400, 150, 40);
-        approveBtn.setBackground(new Color(40, 150, 80));
-        approveBtn.setForeground(Color.WHITE);
-        approveBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        add(approveBtn);
+        mainPanel.add(tableCard, BorderLayout.CENTER);
 
-        JButton rejectBtn = new JButton("Reject");
-        rejectBtn.setBounds(360, 400, 150, 40);
-        rejectBtn.setBackground(new Color(180, 50, 50));
-        rejectBtn.setForeground(Color.WHITE);
-        rejectBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        add(rejectBtn);
+        // ===== Button Panel =====
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(240, 245, 250));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
 
-        JButton refreshBtn = new JButton("Refresh");
-        refreshBtn.setBounds(540, 400, 120, 40);
-        refreshBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        add(refreshBtn);
+        JButton approveBtn = createButton("Approve", new Color(46, 204, 113));
+        JButton rejectBtn = createButton("Reject", new Color(231, 76, 60));
+        JButton refreshBtn = createButton("Refresh", new Color(52, 152, 219));
+        JButton backBtn = createButton("Back", new Color(120, 120, 120));
 
-        JButton backBtn = new JButton("Back");
-        backBtn.setBounds(30, 400, 120, 40);
-        backBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        add(backBtn);
+        buttonPanel.add(backBtn);
+        buttonPanel.add(Box.createHorizontalStrut(20));
+        buttonPanel.add(approveBtn);
+        buttonPanel.add(Box.createHorizontalStrut(20));
+        buttonPanel.add(rejectBtn);
+        buttonPanel.add(Box.createHorizontalStrut(20));
+        buttonPanel.add(refreshBtn);
+
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         // ===== Load Data =====
         loadLeaves();
 
-        // ===== Button Actions =====
+        // ===== Actions =====
         approveBtn.addActionListener(e -> updateSelectedLeave("Approved"));
         rejectBtn.addActionListener(e -> updateSelectedLeave("Rejected"));
         refreshBtn.addActionListener(e -> loadLeaves());
         backBtn.addActionListener(e -> {
             dispose();
-            new AdminDashboard(con); // ✅ pass JDBC connection
+            new AdminDashboard(con);
         });
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);
     }
 
-    // ================= Load Leaves from DB =================
+    // ===== Styled Button Method =====
+    private JButton createButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setPreferredSize(new Dimension(130, 40));
+        return button;
+    }
+
+    // ================= Load Leaves =================
     private void loadLeaves() {
-        model.setRowCount(0); // clear table
+        model.setRowCount(0);
 
         try {
-            String sql = "SELECT leave_id, username, leave_type, from_date, to_date, reason, status FROM leaves";
+            String sql = "SELECT leave_id, username, leave_type, from_date, to_date, reason, status " +
+                         "FROM leaves WHERE status='Pending'";
+
             PreparedStatement pst = con.prepareStatement(sql);
             ResultSet rs = pst.executeQuery();
 
@@ -114,12 +141,11 @@ public class AdminApprovalFrame extends JFrame {
             pst.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage());
         }
     }
 
-    // ================= Approve / Reject Selected Leave =================
+    // ================= Update Leave =================
     private void updateSelectedLeave(String newStatus) {
         int row = table.getSelectedRow();
 
@@ -144,7 +170,6 @@ public class AdminApprovalFrame extends JFrame {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error updating leave: " + e.getMessage());
         }
     }
