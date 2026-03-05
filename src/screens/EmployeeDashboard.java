@@ -2,26 +2,38 @@ package screens;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.sql.Connection;
+import java.sql.*;
 
 public class EmployeeDashboard extends JFrame {
 
     private String username;
-    private Connection con; // JDBC connection
+    private Connection con;
+
+    private JLabel casualLabel;
+    private JLabel sickLabel;
+    private JLabel earnedLabel;
+
+    private final int MAX_CASUAL = 10;
+    private final int MAX_SICK = 8;
+    private final int MAX_EARNED = 15;
 
     public EmployeeDashboard(String username, Connection con) {
         this.username = username;
         this.con = con;
 
-        setTitle("Employee Dashboard");
-        setSize(900, 600);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        getContentPane().setBackground(new Color(240, 240, 240));
-        setLayout(null);
+        setTitle("Employee Dashboard - " + username);
 
+        // ✅ Start in normal window (NOT minimized)
+        setSize(1100, 650);
+        setLocationRelativeTo(null);
+
+        // ✅ If you want full screen, use this instead:
+        // setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Optional icon
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/common/appicon.jpg.jpeg"));
             setIconImage(icon.getImage());
@@ -29,99 +41,151 @@ public class EmployeeDashboard extends JFrame {
             System.out.println("App icon not found");
         }
 
-        // ================= HEADER =================
-        JPanel header = new JPanel();
-        header.setBounds(0, 0, 900, 100);
-        header.setBackground(new Color(40, 90, 160));
-        header.setLayout(null);
-        add(header);
+        getContentPane().setBackground(new Color(240, 245, 250));
 
-        JLabel welcome = new JLabel("Welcome, " + username);
-        welcome.setBounds(30, 30, 600, 40);
+        // ================= HEADER =================
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(25, 60, 120));
+        header.setPreferredSize(new Dimension(100, 90));
+
+        JLabel welcome = new JLabel("  Welcome, " + username);
         welcome.setForeground(Color.WHITE);
-        welcome.setFont(new Font("Arial", Font.BOLD, 28));
-        header.add(welcome);
+        welcome.setFont(new Font("Segoe UI", Font.BOLD, 26));
+
+        header.add(welcome, BorderLayout.WEST);
+        add(header, BorderLayout.NORTH);
+
+        // ================= CENTER PANEL =================
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        centerPanel.setBackground(new Color(240, 245, 250));
+        add(centerPanel, BorderLayout.CENTER);
+
+        JPanel card = new JPanel(new BorderLayout(20, 20));
+        card.setPreferredSize(new Dimension(900, 480));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(25, 30, 25, 30)
+        ));
+
+        centerPanel.add(card);
 
         // ================= BUTTON PANEL =================
-        JButton applyBtn = createDashboardButton("Apply Leave", 120, 130);
-        JButton statusBtn = createDashboardButton("Leave Status", 360, 130);
-        JButton historyBtn = createDashboardButton("Leave History", 600, 130);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
+        buttonPanel.setBackground(Color.WHITE);
 
-        add(applyBtn);
-        add(statusBtn);
-        add(historyBtn);
+        JButton applyBtn = createButton("Apply Leave", new Color(52, 152, 219));
+        JButton statusBtn = createButton("Leave Status", new Color(155, 89, 182));
+        JButton historyBtn = createButton("Leave History", new Color(46, 204, 113));
+
+        buttonPanel.add(applyBtn);
+        buttonPanel.add(statusBtn);
+        buttonPanel.add(historyBtn);
+
+        card.add(buttonPanel, BorderLayout.NORTH);
 
         // ================= LEAVE BALANCE PANEL =================
-        JPanel balancePanel = new JPanel();
-        balancePanel.setBounds(120, 230, 660, 220);
-        balancePanel.setLayout(null);
+        JPanel balancePanel = new JPanel(new GridLayout(3, 1, 15, 15));
         balancePanel.setBackground(Color.WHITE);
-        balancePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2),
-                "Leave Balance", 0, 0, new Font("Arial", Font.BOLD, 18), new Color(40, 90, 160)));
-        add(balancePanel);
+        balancePanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                "Leave Balance",
+                0, 0,
+                new Font("Segoe UI", Font.BOLD, 18),
+                new Color(25, 60, 120)
+        ));
 
-        // Leave labels
-        JLabel casual = createBalanceLabel("Casual Leave : 5", 40, 40, new Color(70, 130, 180));
-        JLabel sick = createBalanceLabel("Sick Leave : 3", 40, 90, new Color(60, 179, 113));
-        JLabel earned = createBalanceLabel("Earned Leave : 8", 40, 140, new Color(218, 165, 32));
+        casualLabel = createBalanceLabel(new Color(52, 152, 219));
+        sickLabel = createBalanceLabel(new Color(155, 89, 182));
+        earnedLabel = createBalanceLabel(new Color(46, 204, 113));
 
-        balancePanel.add(casual);
-        balancePanel.add(sick);
-        balancePanel.add(earned);
+        balancePanel.add(casualLabel);
+        balancePanel.add(sickLabel);
+        balancePanel.add(earnedLabel);
 
-        // ================= LOGOUT BUTTON =================
-        JButton logoutBtn = new JButton("Logout");
-        logoutBtn.setBounds(720, 480, 120, 40);
-        styleButton(logoutBtn, new Color(180, 50, 50));
-        add(logoutBtn);
+        card.add(balancePanel, BorderLayout.CENTER);
+
+        // ================= LOGOUT =================
+        JButton logoutBtn = createButton("Logout", new Color(231, 76, 60));
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.setBackground(Color.WHITE);
+        bottomPanel.add(logoutBtn);
+
+        card.add(bottomPanel, BorderLayout.SOUTH);
+
+        // ================= ACTIONS =================
 
         logoutBtn.addActionListener(e -> {
             dispose();
-            new LoginFrame();
+            new LoginFrame().setVisible(true);
         });
 
-        // ================= BUTTON ACTIONS =================
-        applyBtn.addActionListener(e -> new ApplyLeaveFrame(username, con));
+        applyBtn.addActionListener(e -> new ApplyLeaveFrame(username, con).setVisible(true));
         statusBtn.addActionListener(e -> new LeaveStatusFrame(username, con).setVisible(true));
         historyBtn.addActionListener(e -> new LeaveHistoryFrame(username, con).setVisible(true));
 
+        loadLeaveBalance();
+
+        // ✅ Make visible at end
         setVisible(true);
     }
 
+    // ================= LOAD LEAVE BALANCE =================
+    private void loadLeaveBalance() {
+
+        int usedCasual = 0;
+        int usedSick = 0;
+        int usedEarned = 0;
+
+        try {
+            String sql = "SELECT leave_type, COUNT(*) as total FROM leaves " +
+                    "WHERE username=? AND status='Approved' GROUP BY leave_type";
+
+            PreparedStatement pst = con.prepareStatement(sql);
+            pst.setString(1, username);
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                String type = rs.getString("leave_type");
+                int count = rs.getInt("total");
+
+                if (type.equalsIgnoreCase("Casual"))
+                    usedCasual = count;
+                else if (type.equalsIgnoreCase("Sick"))
+                    usedSick = count;
+                else if (type.equalsIgnoreCase("Earned"))
+                    usedEarned = count;
+            }
+
+            rs.close();
+            pst.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        casualLabel.setText("Casual Leave Remaining : " + (MAX_CASUAL - usedCasual));
+        sickLabel.setText("Sick Leave Remaining : " + (MAX_SICK - usedSick));
+        earnedLabel.setText("Earned Leave Remaining : " + (MAX_EARNED - usedEarned));
+    }
+
     // ================= HELPER METHODS =================
-    private JButton createDashboardButton(String text, int x, int y) {
+    private JButton createButton(String text, Color bg) {
         JButton btn = new JButton(text);
-        btn.setBounds(x, y, 180, 50);
-        styleButton(btn, new Color(40, 90, 160));
-
-        // Hover effect
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(30, 70, 140));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(new Color(40, 90, 160));
-            }
-        });
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(180, 45));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
 
-    private JLabel createBalanceLabel(String text, int x, int y, Color color) {
-        JLabel lbl = new JLabel(text);
-        lbl.setBounds(x, y, 400, 30);
-        lbl.setFont(new Font("Arial", Font.BOLD, 16));
+    private JLabel createBalanceLabel(Color color) {
+        JLabel lbl = new JLabel("", SwingConstants.CENTER);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 17));
         lbl.setForeground(color);
         return lbl;
-    }
-
-    private void styleButton(JButton btn, Color bgColor) {
-        btn.setBackground(bgColor);
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setFont(new Font("Arial", Font.BOLD, 16));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 }
